@@ -300,7 +300,7 @@ public class MainActivity extends AppCompatActivity
         }
 
         /**
-         * Reserved for adding future events.
+         * Reserved for adding future events.ss
          *
          * @param eventType the type of the occurred event
          * @param params    a Bundle containing the passed parameters
