@@ -1,0 +1,29 @@
+<resources>
+    <string name="app_name">TaskManager</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_settings">Settings</string>
+    <string name="dialog_fire_missiles">fire missiles</string>
+    <string name="check_recognition">Is recognition correct?</string>
+    <string name="match_correct">Correct</string>
+    <string name="match_incorrect">Incorrect, record again</string>
+    <string name="dialog_fragment">PopupDialogFragment</string>
+    <string name="speech_ended">Speech ended</string>
+    <string name="speech_began">Speech began</string>
+    <string name="error">Error code: %d</string>
+    <string name="volume">Input volume: %.7f</string>
+    <string-array name="ErrorCodeMapping">
+        <item name="1">ERROR_NETWORK_TIMEOUT</item>
+        <item name="2">ERROR_NETWORK</item>
+        <item name="3">ERROR_AUDIO</item>
+        <item name="4">ERROR_SERVER</item>
+        <item name="5">ERROR_CLIENT</item>
+        <item name="6">ERROR_SPEECH_TIMEOUT</item>
+        <item name="7">ERROR_NO_MATCH</item>
+        <item name="8">ERROR_RECOGNIZER_BUSY</item>
+        <item name="9">ERROR_INSUFFICIENT_PERMISSIONS</item>
+    </string-array>
+
+</resources>
