@@ -25,9 +25,13 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 
 
@@ -76,10 +80,8 @@ public class MainActivity extends AppCompatActivity
             dialog = new PopupDialogFragment();
         }
         linearLayout = (LinearLayout)findViewById(R.id.record_history);
-        TextView record = new TextView(MainActivity.this);
-        record.setText("test");
-        record.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-        linearLayout.addView(record);
+        // Populate the listview with previous records
+        loadHistoryFromFile();
     }
     public void saveRecordingHistory(String text){
         TextView record = new TextView(MainActivity.this);
@@ -168,19 +170,49 @@ public class MainActivity extends AppCompatActivity
         // Using MainActivity.this as an attempt to prevent unnecessary overhead
         Toast.makeText(MainActivity.this, "Fab pressed, start listening", Toast.LENGTH_SHORT).show();
     }
-    private void loadHistoryFromFile(){
 
-    }
+    /**
+     * Save to file use openFileOutput(), get fileOutputStream back. Use getFilesDir to get the path
+     * @param history
+     */
     private void saveHistoryToFile(String history){
-        String FILENAME = "hello_file";
-
+        String FILENAME = MainActivity.this.getString(R.string.data_file_name);
         FileOutputStream fos;
         try {
             fos = openFileOutput(FILENAME, Context.MODE_APPEND);
-            System.out.println(getFilesDir().getAbsolutePath());
-            System.out.println(getFileStreamPath("hello_file"));
+            /* This is the way to get line separator */
+            fos.write(System.getProperty("line.separator").getBytes());
             fos.write(history.getBytes());
             fos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Read from file use openFileInput, and read() will return byte of data.
+     */
+    private void loadHistoryFromFile(){
+        String FILENAME = MainActivity.this.getString(R.string.data_file_name);
+        FileInputStream fis;
+        /**
+         * Use buffer reader to be able to read lines from fileInputStream. Otherwise
+         * fileInputStream will only have a read() method and read the whole content by byte
+         */
+        BufferedReader reader;
+        try {
+            fis = openFileInput(FILENAME);
+            reader = new BufferedReader(new InputStreamReader(fis));
+            String content;
+            TextView record;
+            while ((content = reader.readLine()) != null) {
+                record = new TextView(MainActivity.this);
+                record.setText(content);
+                record.setLayoutParams(
+                        new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
+                                LinearLayout.LayoutParams.WRAP_CONTENT));
+                linearLayout.addView(record);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -25,5 +25,6 @@
         <item name="8">ERROR_RECOGNIZER_BUSY</item>
         <item name="9">ERROR_INSUFFICIENT_PERMISSIONS</item>
     </string-array>
+    <string name="data_file_name">taskManagerData</string>
 
 </resources>
