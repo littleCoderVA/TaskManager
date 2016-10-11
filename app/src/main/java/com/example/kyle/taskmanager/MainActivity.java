@@ -2,6 +2,7 @@ package com.example.kyle.taskmanager;
 
 import android.app.Fragment;
 import android.app.FragmentTransaction;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -33,16 +34,17 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Locale;
 
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener{
 
-    private SpeechRecognizer recognizer;
     /* Used to handle permission request */
     private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
     private Fragment dialog;
     private LinearLayout linearLayout;
+    private final int REQ_CODE_SPEECH_INPUT = 100;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,7 +77,6 @@ public class MainActivity extends AppCompatActivity
         if (permissionCheck == PackageManager.PERMISSION_DENIED) {
             ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.RECORD_AUDIO}, PERMISSIONS_REQUEST_RECORD_AUDIO);
         }
-        recognizer = setUpSpeechRecognizer();
         if (savedInstanceState == null) {
             dialog = new PopupDialogFragment();
         }
@@ -147,11 +148,6 @@ public class MainActivity extends AppCompatActivity
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
-    private SpeechRecognizer setUpSpeechRecognizer(){
-        SpeechRecognizer speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
-        speechRecognizer.setRecognitionListener(new listener());
-        return speechRecognizer;
-    }
     public void startSpeechRecognizer(){
         Intent recognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         /*
@@ -163,7 +159,7 @@ public class MainActivity extends AppCompatActivity
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
         // accept partial results if they come
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
-        recognizer.startListening(recognizerIntent);
+        startActivityForResult(recognizerIntent, REQ_CODE_SPEECH_INPUT);
     }
     private void fabListener(){
         startSpeechRecognizer();
@@ -217,129 +213,30 @@ public class MainActivity extends AppCompatActivity
             e.printStackTrace();
         }
     }
-
     /**
-     *
-     * Implement the recognitionListener as inner class allows it to access fields inside activity class
+     * Receiving speech input
      */
-    class listener implements RecognitionListener {
-        private String[] errorCodes = getResources().getStringArray(R.array.ErrorCodeMapping);
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
 
-        /**
-         * Called when the endpointer is ready for the user to start speaking.
-         *
-         * @param params parameters set by the recognition service. Reserved for future use.
-         */
-        @Override
-        public void onReadyForSpeech(Bundle params) {
-            ((TextView)findViewById(R.id.recording_status)).setText("Ready for speech");
-        }
-
-        /**
-         * The user has started to speak.
-         */
-        @Override
-        public void onBeginningOfSpeech() {
-            TextView status = ((TextView)findViewById(R.id.recording_status));
-            status.setText(R.string.speech_began);
-            status.setBackgroundColor(ContextCompat.getColor(MainActivity.this, android.R.color.holo_green_light));
-        }
-
-        /**
-         * The sound level in the audio stream has changed. There is no guarantee that this method will
-         * be called.
-         *
-         * @param rmsdB the new RMS dB value
-         */
-        @Override
-        public void onRmsChanged(float rmsdB) {
-            // R.string.volume use %.6f as a place holder, and pass that float value with 6 decimal
-            // points into the string. getString is the same as MainActivity.this.getString()
-            ((TextView)findViewById(R.id.volume_status)).setText(getString(R.string.volume, rmsdB));
-        }
-
-        /**
-         * More sound has been received. The purpose of this function is to allow giving feedback to the
-         * user regarding the captured audio. There is no guarantee that this method will be called.
-         *
-         * @param buffer a buffer containing a sequence of big-endian 16-bit integers representing a
-         *               single channel audio stream. The sample rate is implementation dependent.
-         */
-        @Override
-        public void onBufferReceived(byte[] buffer) {
-        }
-
-        /**
-         * Called after the user stops speaking.
-         */
-        @Override
-        public void onEndOfSpeech() {
-            TextView status = (TextView)findViewById(R.id.recording_status);
-            status.setText(R.string.speech_ended);
-            status.setBackgroundColor(ContextCompat.getColor(MainActivity.this, android.R.color.holo_blue_light));
-
-        }
-
-        /**
-         * A network or recognition error occurred.
-         *
-         * @param error code is defined in {@link SpeechRecognizer}
-         */
-        @Override
-        public void onError(int error) {
-            TextView status = ((TextView)findViewById(R.id.recording_status));
-            status.setText(errorCodes[error]);
-            status.setBackgroundColor(ContextCompat.getColor(MainActivity.this, android.R.color.holo_red_light));
-        }
-
-        /**
-         * Called when recognition results are ready.
-         *
-         * @param results the recognition results. To retrieve the results in {@code
-         *                ArrayList<String>} format use {@link Bundle#getStringArrayList(String)} with
-         *                {@link SpeechRecognizer#RESULTS_RECOGNITION} as a parameter. A float array of
-         *                confidence values might also be given in {@link SpeechRecognizer#CONFIDENCE_SCORES}.
-         */
-        @Override
-        public void onResults(Bundle results) {
-            // An array of possible recognition with the first one being the most accurate.
-            ArrayList data = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-            if (data != null && data.size() >= 0) {
-                ((TextView) findViewById(R.id.recording_status)).setText(data.get(0).toString());
-
-                // prompt the user if that's the right result, if yes proceed with action. Otherwise user can just click the fab button and record again
-                FragmentTransaction ft = getFragmentManager().beginTransaction();
-                dialog.setArguments(results);
-                ft.add(dialog, MainActivity.this.getString(R.string.dialog_fragment)).commit();
+        switch (requestCode) {
+            case REQ_CODE_SPEECH_INPUT: {
+                if (resultCode == RESULT_OK && null != data) {
+                    /* data contains a list of possible results. First one being the closest. */
+                    String speechResult = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS).get(0);
+                    Bundle resultPassToPopUp = new Bundle();
+                    resultPassToPopUp.putString(
+                            MainActivity.this.getString(R.string.bundle_tag_recording_result),
+                            speechResult);
+                    // prompt the user if that's the right result, if yes proceed with action.
+                    // Otherwise user can just click the fab button and record again
+                    FragmentTransaction ft = getFragmentManager().beginTransaction();
+                    dialog.setArguments(resultPassToPopUp);
+                    ft.add(dialog, MainActivity.this.getString(R.string.dialog_fragment)).commit();
+                }
+                break;
             }
-        }
-
-        /**
-         * Called when partial recognition results are available. The callback might be called at any
-         * time between {@link #onBeginningOfSpeech()} and {@link #onResults(Bundle)} when partial
-         * results are ready. This method may be called zero, one or multiple times for each call to
-         * {@link SpeechRecognizer#startListening(Intent)}, depending on the speech recognition
-         * service implementation.  To request partial results, use
-         * {@link RecognizerIntent#EXTRA_PARTIAL_RESULTS}
-         *
-         * @param partialResults the returned results. To retrieve the results in
-         *                       ArrayList&lt;String&gt; format use {@link Bundle#getStringArrayList(String)} with
-         *                       {@link SpeechRecognizer#RESULTS_RECOGNITION} as a parameter
-         */
-        @Override
-        public void onPartialResults(Bundle partialResults) {
-
-        }
-
-        /**
-         * Reserved for adding future events.
-         *
-         * @param eventType the type of the occurred event
-         * @param params    a Bundle containing the passed parameters
-         */
-        @Override
-        public void onEvent(int eventType, Bundle params) {
-
         }
     }
 }

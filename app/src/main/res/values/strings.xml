@@ -26,5 +26,6 @@
         <item name="9">ERROR_INSUFFICIENT_PERMISSIONS</item>
     </string-array>
     <string name="data_file_name">taskManagerData</string>
+    <string name="bundle_tag_recording_result">bundle_tag_recording_result</string>
 
 </resources>

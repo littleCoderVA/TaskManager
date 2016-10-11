@@ -28,10 +28,12 @@ public class PopupDialogFragment extends DialogFragment{
                         Toast.makeText(getActivity(), "matched", Toast.LENGTH_SHORT).show();
                         // somehow the saveInstanceState are always null, using getArguments helps
                         Bundle bundle = getArguments();
-                        ArrayList<String> result;
+                        String result;
                         if (bundle != null && (result = bundle
-                                .getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION))!=null) {
-                            ((MainActivity) getActivity()).saveRecordingHistory(result.get(0));
+                                .getString(getActivity().getString(R.string.bundle_tag_recording_result)))!=null) {
+                            ((MainActivity) getActivity()).saveRecordingHistory(result);
+                        } else {
+                            Toast.makeText(getActivity(), "Bundle is null or value not found", Toast.LENGTH_SHORT).show();
                         }
                     }
                 })
