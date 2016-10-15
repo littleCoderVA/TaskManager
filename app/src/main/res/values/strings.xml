@@ -6,7 +6,7 @@
 
     <string name="action_settings">Settings</string>
     <string name="dialog_fire_missiles">fire missiles</string>
-    <string name="check_recognition">Is recognition correct?</string>
+    <string name="check_recognition">You said \"%s\" correct?</string>
     <string name="match_correct">Correct</string>
     <string name="match_incorrect">Incorrect, record again</string>
     <string name="dialog_fragment">PopupDialogFragment</string>

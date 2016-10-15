@@ -21,20 +21,20 @@ public class PopupDialogFragment extends DialogFragment{
     @Override
     public Dialog onCreateDialog(final Bundle savedInstanceState) {
         // Use the Builder class for convenient dialog construction
+        // somehow the saveInstanceState are always null, using getArguments helps
+        Bundle bundle = getArguments();
+        String result = null;
+        if (bundle != null && (result = bundle
+                .getString(getActivity().getString(R.string.bundle_tag_recording_result)))!=null) {
+            ((MainActivity) getActivity()).saveRecordingHistory(result);
+        } else {
+            Toast.makeText(getActivity(), "Bundle is null or value not found", Toast.LENGTH_SHORT).show();
+        }
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setMessage(R.string.check_recognition)
+        builder.setMessage(getActivity().getString(R.string.check_recognition, result))
                 .setPositiveButton(R.string.match_correct, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         Toast.makeText(getActivity(), "matched", Toast.LENGTH_SHORT).show();
-                        // somehow the saveInstanceState are always null, using getArguments helps
-                        Bundle bundle = getArguments();
-                        String result;
-                        if (bundle != null && (result = bundle
-                                .getString(getActivity().getString(R.string.bundle_tag_recording_result)))!=null) {
-                            ((MainActivity) getActivity()).saveRecordingHistory(result);
-                        } else {
-                            Toast.makeText(getActivity(), "Bundle is null or value not found", Toast.LENGTH_SHORT).show();
-                        }
                     }
                 })
                 .setNegativeButton(R.string.match_incorrect, new DialogInterface.OnClickListener() {

@@ -2,14 +2,11 @@ package com.example.kyle.taskmanager;
 
 import android.app.Fragment;
 import android.app.FragmentTransaction;
-import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
-import android.speech.SpeechRecognizer;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
@@ -27,14 +24,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Locale;
 
 
 public class MainActivity extends AppCompatActivity
@@ -45,6 +39,7 @@ public class MainActivity extends AppCompatActivity
     private Fragment dialog;
     private LinearLayout linearLayout;
     private final int REQ_CODE_SPEECH_INPUT = 100;
+    private FileReadAndWrite readAndWrite;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,8 +77,10 @@ public class MainActivity extends AppCompatActivity
         }
         linearLayout = (LinearLayout)findViewById(R.id.record_history);
         // Populate the listview with previous records
+        readAndWrite = new FileReadAndWrite();
         loadHistoryFromFile();
     }
+
     public void saveRecordingHistory(String text){
         TextView record = new TextView(MainActivity.this);
         record.setText(text);
@@ -161,6 +158,7 @@ public class MainActivity extends AppCompatActivity
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
         startActivityForResult(recognizerIntent, REQ_CODE_SPEECH_INPUT);
     }
+
     private void fabListener(){
         startSpeechRecognizer();
         // Using MainActivity.this as an attempt to prevent unnecessary overhead
@@ -168,49 +166,28 @@ public class MainActivity extends AppCompatActivity
     }
 
     /**
-     * Save to file use openFileOutput(), get fileOutputStream back. Use getFilesDir to get the path
+     * Save record to file
      * @param history
      */
     private void saveHistoryToFile(String history){
-        String FILENAME = MainActivity.this.getString(R.string.data_file_name);
-        FileOutputStream fos;
-        try {
-            fos = openFileOutput(FILENAME, Context.MODE_APPEND);
-            /* This is the way to get line separator */
-            fos.write(System.getProperty("line.separator").getBytes());
-            fos.write(history.getBytes());
-            fos.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        readAndWrite.writeToFileWithLineBreaks(MainActivity.this, MainActivity.this.getString(R.string.data_file_name), history);
     }
 
     /**
-     * Read from file use openFileInput, and read() will return byte of data.
+     * Read record from file then feed the results into linearLayout
      */
-    private void loadHistoryFromFile(){
-        String FILENAME = MainActivity.this.getString(R.string.data_file_name);
-        FileInputStream fis;
-        /**
-         * Use buffer reader to be able to read lines from fileInputStream. Otherwise
-         * fileInputStream will only have a read() method and read the whole content by byte
-         */
-        BufferedReader reader;
-        try {
-            fis = openFileInput(FILENAME);
-            reader = new BufferedReader(new InputStreamReader(fis));
-            String content;
-            TextView record;
-            while ((content = reader.readLine()) != null) {
-                record = new TextView(MainActivity.this);
-                record.setText(content);
-                record.setLayoutParams(
-                        new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
-                                LinearLayout.LayoutParams.WRAP_CONTENT));
-                linearLayout.addView(record);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+    private void loadHistoryFromFile() {
+        ArrayList<String> contents = readAndWrite.readFromFileWithLineBreaks(MainActivity.this,
+                MainActivity.this.getString(R.string.data_file_name));
+
+        TextView record;
+        for (String content : contents) {
+            record = new TextView(MainActivity.this);
+            record.setText(content);
+            record.setLayoutParams(
+                    new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT));
+            linearLayout.addView(record);
         }
     }
     /**
