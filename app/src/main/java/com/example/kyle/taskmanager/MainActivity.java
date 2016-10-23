@@ -2,7 +2,6 @@ package com.example.kyle.taskmanager;
 
 import android.app.Fragment;
 import android.app.FragmentTransaction;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -16,20 +15,14 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
-
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener{
@@ -39,7 +32,8 @@ public class MainActivity extends AppCompatActivity
     private Fragment dialog;
     private LinearLayout linearLayout;
     private final int REQ_CODE_SPEECH_INPUT = 100;
-    private FileReadAndWrite readAndWrite;
+    private SimulatedRepositoryClass readAndWrite;
+    private ManageTaskService manageTaskService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,8 +70,10 @@ public class MainActivity extends AppCompatActivity
             dialog = new PopupDialogFragment();
         }
         linearLayout = (LinearLayout)findViewById(R.id.record_history);
+        readAndWrite = SimulatedRepositoryClass.getInstance();
+        manageTaskService = ManageTaskService.getInstance();
+
         // Populate the listview with previous records
-        readAndWrite = new FileReadAndWrite();
         loadHistoryFromFile();
     }
 
@@ -145,6 +141,63 @@ public class MainActivity extends AppCompatActivity
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
+
+    /**
+     * Gets called after user clicks confirm on voice recognition confirmation popup
+     */
+    public void popUpAccept(String commandString){
+        ArrayList<String> tokenizeCommand = commandTokenizer(commandString);
+        if (tokenizeCommand != null) {
+            CommandEnum command = CommandEnum.valueOf(tokenizeCommand.get(0));
+            switch (command) {
+                case NEWTASK:
+                    manageTaskService.createTask(this, tokenizeCommand.get(1));
+                    break;
+                case STARTTASK:
+//                    manageTaskService.recordStartTime();
+                    break;
+                case ENDTASK:
+                    break;
+            }
+        }
+    }
+
+    /**
+     * Process the raw input string into recognizable command with/without additional parameters
+     * @param commandString raw input string with spaces
+     * @return ArrayList of string token with format of {[command][parameter 1]...[parameter n]}
+     */
+    private ArrayList<String> commandTokenizer(String commandString){
+        // TODO: need to make this method more powerful to process raw string inputs, otherwise the
+        // trade of for creating these new ArrayList are too much
+        String trimCommand = commandString.replaceAll("\\s", "");
+        String matchingEnumStr = CommandEnum.NEWTASK.toString();
+        if (trimCommand.contains(matchingEnumStr.toLowerCase())) {
+            ArrayList<String> tokenizeCommand = new ArrayList<>();
+            /* Command */
+            tokenizeCommand.add(matchingEnumStr);
+            /* Additional parameter */
+            tokenizeCommand.add(trimCommand.replace(matchingEnumStr, ""));
+            return tokenizeCommand;
+        }
+        Log.e("Error spotted", "commandTokenizer");
+        return null;
+    }
+
+    /**
+     * Gets called after user clicks decline on voice recognition confirmation popup
+     */
+    public void popUpDecline(){
+        startSpeechRecognizer();
+    }
+
+    /**
+     * Gets called after user clicks decline on voice recognition confirmation popup
+     */
+    public void popUpNeutral(){
+        startSpeechRecognizer();
+    }
+
     public void startSpeechRecognizer(){
         Intent recognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         /*
