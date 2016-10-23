@@ -58,8 +58,9 @@ class SimulatedRepositoryClass {
     /**
      * Save to file use openFileOutput(), get fileOutputStream back. Use getFilesDir to get the path if needed
      * @param history record message
+     * @return true if successfully wrote into file. Vice-versa
      */
-    void writeToFileWithLineBreaks(Context context, String fileName, String history){
+    boolean writeToFileWithLineBreaks(Context context, String fileName, String history){
         FileOutputStream fos;
         try {
             fos = context.openFileOutput(fileName, Context.MODE_APPEND);
@@ -67,8 +68,10 @@ class SimulatedRepositoryClass {
             fos.write(System.getProperty("line.separator").getBytes());
             fos.write(history.getBytes());
             fos.close();
+            return true;
         } catch (IOException e) {
             e.printStackTrace();
+            return false;
         }
     }
     /**
@@ -76,9 +79,13 @@ class SimulatedRepositoryClass {
      * @param context activity
      * @param task record message
      */
-    void writeTaskToFile(Context context, TaskInterface task){
+    TaskInterface writeTaskToFile(Context context, TaskInterface task){
         System.out.println("Writing "+task.toString()+" to file");
-        writeToFileWithLineBreaks(context, context.getString(R.string.data_file_name), task.toString());
+        /* if write to file succeed */
+        if (writeToFileWithLineBreaks(context, context.getString(R.string.data_file_name), task.toString())){
+            return task;
+        }
+        return null;
     }
 
 }

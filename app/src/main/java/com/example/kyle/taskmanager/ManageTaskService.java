@@ -7,7 +7,7 @@ import android.content.Context;
  * Singleton ManageTaskService for Managing the tasks
  */
 
-public final class ManageTaskService {
+final class ManageTaskService {
     /* Lazy loading for singleton instance, so leaving it null, didn't instantiate it here */
     private static ManageTaskService instance = null;
     private SimulatedRepositoryClass readAndWrite;
@@ -16,17 +16,18 @@ public final class ManageTaskService {
     private ManageTaskService() {
         readAndWrite = SimulatedRepositoryClass.getInstance();
     }
+
     /* The only method outside classes can call to get the singleton instance of this class */
-    public static ManageTaskService getInstance(){
+    static ManageTaskService getInstance(){
         if (instance == null){
             instance = new ManageTaskService();
         }
         return instance;
     }
 
-    public void createTask(Context context, String taskName) {
+    TaskInterface createTask(Context context, String taskName) {
         TaskInterface task = new Task(taskName);
-        readAndWrite.writeTaskToFile(context, task);
+        return readAndWrite.writeTaskToFile(context, task);
     }
 
     public void recordStartTime(TaskInterface task) {

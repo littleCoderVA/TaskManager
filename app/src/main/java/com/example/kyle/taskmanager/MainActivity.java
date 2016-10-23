@@ -22,6 +22,9 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import org.w3c.dom.Text;
+
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity
@@ -151,7 +154,10 @@ public class MainActivity extends AppCompatActivity
             CommandEnum command = CommandEnum.valueOf(tokenizeCommand.get(0));
             switch (command) {
                 case NEWTASK:
-                    manageTaskService.createTask(this, tokenizeCommand.get(1));
+                    TaskInterface task;
+                    if ((task = manageTaskService.createTask(this, tokenizeCommand.get(1))) != null) {
+                        linearLayout.addView(createNewTextViewRecord(task.toString()));
+                    }
                     break;
                 case STARTTASK:
 //                    manageTaskService.recordStartTime();
@@ -232,16 +238,18 @@ public class MainActivity extends AppCompatActivity
     private void loadHistoryFromFile() {
         ArrayList<String> contents = readAndWrite.readFromFileWithLineBreaks(MainActivity.this,
                 MainActivity.this.getString(R.string.data_file_name));
-
-        TextView record;
         for (String content : contents) {
-            record = new TextView(MainActivity.this);
-            record.setText(content);
-            record.setLayoutParams(
-                    new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
-                            LinearLayout.LayoutParams.WRAP_CONTENT));
-            linearLayout.addView(record);
+            linearLayout.addView(createNewTextViewRecord(content));
         }
+    }
+
+    private TextView createNewTextViewRecord(String content){
+        TextView record = new TextView(MainActivity.this);
+        record.setText(content);
+        record.setLayoutParams(
+                new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT));
+        return record;
     }
     /**
      * Receiving speech input

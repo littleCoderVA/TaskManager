@@ -57,7 +57,7 @@ public class Task implements TaskInterface{
      * Create a task without starting
      * @param name task name
      */
-    public Task(String name){
+    Task(String name){
         this.name = name;
         this.finished = false;
     }
@@ -81,7 +81,7 @@ public class Task implements TaskInterface{
 
     @Override
     public String toString() {
-        return "Name: " + name + "\n" + "Start time: " + startTime + "\n"
+        return "\nName: " + name + "\n" + "Start time: " + startTime + "\n"
                 + "End time: " + endTime + "\n" + "Finished: " + finished + "\n";
     }
 
