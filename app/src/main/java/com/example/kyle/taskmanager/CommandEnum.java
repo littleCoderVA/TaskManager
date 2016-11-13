@@ -8,9 +8,9 @@ enum CommandEnum {
     /**
      * NEWTASK command will have one tailing String param for task name
      */
-    NEWTASK(1, "NT", "New task"),
-    STARTTASK(2, "ST", "Start task"),
-    ENDTASK(3, "ET", "End task");
+    NEWTASK(1, "NT", "new task"),
+    STARTTASK(2, "ST", "start task"),
+    ENDTASK(3, "ET", "end task");
     private int id;
     private String abbrev;
     private String description;
@@ -18,5 +18,14 @@ enum CommandEnum {
         this.id = id;
         this.abbrev = abbrev;
         this.description = description;
+    }
+    public String getDescription(){
+        return this.description;
+    }
+    public String getAbbrev(){
+        return this.abbrev;
+    }
+    public int getId(){
+        return this.id;
     }
 }

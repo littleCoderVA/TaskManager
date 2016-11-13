@@ -5,12 +5,15 @@ package com.example.kyle.taskmanager;
  */
 
 interface TaskInterface {
+    Integer getTaskId();
+    void setTaskId(Integer id);
+    String getName();
+    void setName(String name);
     /**
      * Start task and note down the start time
      * @param startTime long
      */
     void startTask(long startTime);
-
     /**
      * End the activity
      * @param endTime long
@@ -20,6 +23,6 @@ interface TaskInterface {
     void setStartTime(long startTime);
     long getEndTime();
     void setEndTime(long endTime);
-    boolean isFinished();
+    boolean getFinished();
     void setFinished(boolean finished);
 }

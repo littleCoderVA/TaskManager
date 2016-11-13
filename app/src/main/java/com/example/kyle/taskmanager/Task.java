@@ -3,12 +3,24 @@ package com.example.kyle.taskmanager;
 /**
  * Created by kyle on 10/16/16.
  * An task for task manager
+ * A task must have a name, it's something after all.
  */
 public class Task implements TaskInterface{
+    private Integer id;
     private String name;
     private long startTime;
     private long endTime;
     private boolean finished;
+
+    @Override
+    public Integer getTaskId() {
+        return id;
+    }
+
+    @Override
+    public void setTaskId(Integer id) {
+        this.id = id;
+    }
 
     public String getName() {
         return name;
@@ -34,7 +46,7 @@ public class Task implements TaskInterface{
         this.endTime = endTime;
     }
 
-    public boolean isFinished() {
+    public boolean getFinished() {
         return finished;
     }
 
@@ -59,6 +71,12 @@ public class Task implements TaskInterface{
      */
     Task(String name){
         this.name = name;
+        this.finished = false;
+    }
+    /**
+     * Create a task without properties
+     */
+    Task(){
         this.finished = false;
     }
 

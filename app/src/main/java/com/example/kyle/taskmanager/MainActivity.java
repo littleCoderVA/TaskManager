@@ -2,8 +2,12 @@ package com.example.kyle.taskmanager;
 
 import android.app.Fragment;
 import android.app.FragmentTransaction;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
 import android.support.design.widget.FloatingActionButton;
@@ -23,24 +27,27 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.w3c.dom.Text;
-
 import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener{
+        implements NavigationView.OnNavigationItemSelectedListener {
 
     /* Used to handle permission request */
     private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
+    private static Database database;
     private Fragment dialog;
     private LinearLayout linearLayout;
     private final int REQ_CODE_SPEECH_INPUT = 100;
-    private SimulatedRepositoryClass readAndWrite;
     private ManageTaskService manageTaskService;
+    private TextView status;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // first open database
+        database = new Database();
+        database.open(this);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -49,8 +56,6 @@ public class MainActivity extends AppCompatActivity
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-//                        .setAction("Action", null).show();
                 fabListener();
             }
         });
@@ -72,15 +77,12 @@ public class MainActivity extends AppCompatActivity
         if (savedInstanceState == null) {
             dialog = new PopupDialogFragment();
         }
-        linearLayout = (LinearLayout)findViewById(R.id.record_history);
-        readAndWrite = SimulatedRepositoryClass.getInstance();
-        manageTaskService = ManageTaskService.getInstance();
-
-        // Populate the listview with previous records
-        loadHistoryFromFile();
+        linearLayout = (LinearLayout) findViewById(R.id.record_history);
+        status = (TextView) findViewById(R.id.recording_status);
+        status.setBackgroundColor(Color.RED);
     }
 
-    public void saveRecordingHistory(String text){
+    public void saveRecordingHistory(String text) {
         TextView record = new TextView(MainActivity.this);
         record.setText(text);
         record.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
@@ -148,63 +150,65 @@ public class MainActivity extends AppCompatActivity
     /**
      * Gets called after user clicks confirm on voice recognition confirmation popup
      */
-    public void popUpAccept(String commandString){
-        ArrayList<String> tokenizeCommand = commandTokenizer(commandString);
-        if (tokenizeCommand != null) {
-            CommandEnum command = CommandEnum.valueOf(tokenizeCommand.get(0));
-            switch (command) {
-                case NEWTASK:
-                    TaskInterface task;
-                    if ((task = manageTaskService.createTask(this, tokenizeCommand.get(1))) != null) {
-                        linearLayout.addView(createNewTextViewRecord(task.toString()));
-                    }
-                    break;
-                case STARTTASK:
-//                    manageTaskService.recordStartTime();
-                    break;
-                case ENDTASK:
-                    break;
+    public void popUpAccept(String commandString) {
+
+        //ArrayList<String> tokenizeCommand = commandTokenizer(commandString);
+
+        //if (tokenizeCommand != null) {
+        String commandDesc;
+        if (commandString.contains((commandDesc = CommandEnum.NEWTASK.getDescription()))) {
+            TaskInterface task;
+            String arguments = commandString.replace(commandDesc, "");
+            if ((task = manageTaskService.createTask(arguments)) != null) {
+                linearLayout.addView(createNewTextViewRecord(task.toString()));
             }
         }
-    }
-
-    /**
-     * Process the raw input string into recognizable command with/without additional parameters
-     * @param commandString raw input string with spaces
-     * @return ArrayList of string token with format of {[command][parameter 1]...[parameter n]}
-     */
-    private ArrayList<String> commandTokenizer(String commandString){
-        // TODO: need to make this method more powerful to process raw string inputs, otherwise the
-        // trade of for creating these new ArrayList are too much
-        String trimCommand = commandString.replaceAll("\\s", "");
-        String matchingEnumStr = CommandEnum.NEWTASK.toString();
-        if (trimCommand.contains(matchingEnumStr.toLowerCase())) {
-            ArrayList<String> tokenizeCommand = new ArrayList<>();
-            /* Command */
-            tokenizeCommand.add(matchingEnumStr);
-            /* Additional parameter */
-            tokenizeCommand.add(trimCommand.replace(matchingEnumStr, ""));
-            return tokenizeCommand;
+        else if(commandString.contains((CommandEnum.STARTTASK.getDescription()))) {
+            //command = CommandEnum.STARTTASK;
         }
-        Log.e("Error spotted", "commandTokenizer");
-        return null;
+        else if(commandString.contains((CommandEnum.ENDTASK.getDescription()))) {
+            //command = CommandEnum.ENDTASK;
+        }
+
     }
+//
+//    /**
+//     * Process the raw input string into recognizable command with/without additional parameters
+//     *
+//     * @param commandString raw input string with spaces
+//     * @return ArrayList of string token with format of {[command][parameter 1]...[parameter n]}
+//     */
+//    private ArrayList<String> commandTokenizer(String commandString) {
+//        // TODO: need to make this method more powerful to process raw string inputs, otherwise the
+//        // trade of for creating these new ArrayList are too much
+//        String matchingEnumDesc;
+//        if (commandString.contains((matchingEnumDesc=CommandEnum.NEWTASK.getDescription()))) {
+//            ArrayList<String> tokenizeCommand = new ArrayList<>();
+//            /* Command */
+//            tokenizeCommand.add(Integer.toString(CommandEnum.NEWTASK.getId()));
+//            /* Additional parameter */
+//            tokenizeCommand.add(commandString.replace(matchingEnumDesc, ""));
+//            return tokenizeCommand;
+//        }
+//        Log.e("Error spotted", "commandTokenizer");
+//        return null;
+//    }
 
     /**
      * Gets called after user clicks decline on voice recognition confirmation popup
      */
-    public void popUpDecline(){
+    public void popUpDecline() {
         startSpeechRecognizer();
     }
 
     /**
      * Gets called after user clicks decline on voice recognition confirmation popup
      */
-    public void popUpNeutral(){
+    public void popUpNeutral() {
         startSpeechRecognizer();
     }
 
-    public void startSpeechRecognizer(){
+    public void startSpeechRecognizer() {
         Intent recognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         /*
         * EXTRA_LANGUAGE_MODEL:
@@ -218,7 +222,7 @@ public class MainActivity extends AppCompatActivity
         startActivityForResult(recognizerIntent, REQ_CODE_SPEECH_INPUT);
     }
 
-    private void fabListener(){
+    private void fabListener() {
         startSpeechRecognizer();
         // Using MainActivity.this as an attempt to prevent unnecessary overhead
         Toast.makeText(MainActivity.this, "Fab pressed, start listening", Toast.LENGTH_SHORT).show();
@@ -226,24 +230,39 @@ public class MainActivity extends AppCompatActivity
 
     /**
      * Save record to file
+     *
      * @param history
      */
-    private void saveHistoryToFile(String history){
-        readAndWrite.writeToFileWithLineBreaks(MainActivity.this, MainActivity.this.getString(R.string.data_file_name), history);
+    private void saveHistoryToFile(String history) {
+//        manageTaskService(MainActivity.this.getString(R.string.data_file_name), history);
     }
 
+    public void dbOpenedCallback(SQLiteDatabase database){
+        MainActivity.this.instantiateManageTaskService(database);
+        MainActivity.this.showDbReadyColor();
+        MainActivity.this.loadHistoryFromFile();
+    }
     /**
      * Read record from file then feed the results into linearLayout
      */
     private void loadHistoryFromFile() {
-        ArrayList<String> contents = readAndWrite.readFromFileWithLineBreaks(MainActivity.this,
-                MainActivity.this.getString(R.string.data_file_name));
-        for (String content : contents) {
-            linearLayout.addView(createNewTextViewRecord(content));
+        List<TaskInterface> contents = manageTaskService.retrieveAllTasks();
+        for (TaskInterface task : contents) {
+            linearLayout.addView(createNewTextViewRecord(task.toString()));
         }
     }
 
-    private TextView createNewTextViewRecord(String content){
+    private void showDbReadyColor() {
+        status.setBackgroundColor(Color.TRANSPARENT);
+    }
+
+    private void instantiateManageTaskService(SQLiteDatabase db) {
+        if (manageTaskService == null) {
+            manageTaskService = new ManageTaskService(db);
+        }
+    }
+
+    private TextView createNewTextViewRecord(String content) {
         TextView record = new TextView(MainActivity.this);
         record.setText(content);
         record.setLayoutParams(
@@ -251,6 +270,7 @@ public class MainActivity extends AppCompatActivity
                         LinearLayout.LayoutParams.WRAP_CONTENT));
         return record;
     }
+
     /**
      * Receiving speech input
      */
